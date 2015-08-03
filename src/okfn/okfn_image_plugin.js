@@ -18,13 +18,13 @@ goog.require('goog.style');
 annotorious.okfn.ImagePlugin = function(image, okfnAnnotator) {
   var baseOffset = annotorious.dom.getOffset(okfnAnnotator.element[0].firstChild);
     
-  // var eventBroker = new annotorious.events.EventBroker();
+  var eventBroker = new annotorious.events.EventBroker();
  
   // Trying to re-use more from the standalone version
   // BEWARE this may get dirty (at first...)
-  var popup = new annotorious.okfn.Popup(image, okfnAnnotator, baseOffset);  
-  var annotator = new annotorious.modules.image.ImageAnnotator(image, popup);
-  
+  var popup = new annotorious.okfn.Popup(image, okfnAnnotator, baseOffset, eventBroker);  
+  var annotator = new annotorious.modules.image.ImageAnnotator(image, popup, eventBroker);
+  var annotationLayer = annotator.annotationLayer;
   /*
   var annotationLayer = goog.dom.createDom('div', 'yuma-annotationlayer');
   goog.style.setStyle(annotationLayer, 'position', 'relative');
@@ -151,30 +151,34 @@ annotorious.okfn.ImagePlugin = function(image, okfnAnnotator) {
 
   /** Communication yuma -> okfn **/
   
-  eventBroker.addHandler(annotorious.events.EventType.SELECTION_COMPLETED, function(event) {    
-    var annotation = { url: image.src, shapes: [event.shape] };
+  eventBroker.addHandler(annotorious.events.EventType.SELECTION_COMPLETED, function(event) {  
+    var bounds = event.viewportBounds;
+    var x = bounds.left + image.offsetLeft;
+    var y = bounds.bottom + 4 + image.offsetTop;
+
+    var annotation = { url: image.src, shapes: [bounds] };
     okfnAnnotator.publish('beforeAnnotationCreated', annotation);
 	
     var imgOffset = annotorious.dom.getOffset(image);
-    var geometry = event.shape.geometry; 
-    var x = geometry.x + imgOffset.left - baseOffset.left + 16;
-    var y = geometry.y + geometry.height + imgOffset.top + window.pageYOffset - baseOffset.top + 5;
+    // var geometry = event.shape.geometry; 
+    // var x = geometry.x + imgOffset.left - baseOffset.left + 16;
+    // var y = geometry.y + geometry.height + imgOffset.top + window.pageYOffset - baseOffset.top + 5;
     
     okfnAnnotator.showEditor(annotation, {top: window.pageYOffset - baseOffset.top, left: 0});
-    goog.style.setPosition(okfnAnnotator.editor.element[0], x, y);	
+    goog.style.setPosition(okfnAnnotator.editor.element[0], x, y);
   });
 
   eventBroker.addHandler(annotorious.events.EventType.SELECTION_CANCELED, function() {
-    goog.style.showElement(editCanvas, false);
-    selector.stopSelection();
+    goog.style.showElement(annotator._editCanvas, false);
+    annotator._currentSelector.stopSelection();
   });
   
   /** Communication okfn -> yuma **/
   
   okfnAnnotator.viewer.on('edit', function(annotation) {
     if (annotation.url == image.src) {
-      goog.style.showElement(editCanvas, true);
-      viewer.highlightAnnotation(undefined);
+      goog.style.showElement(annotator._editCanvas, true);
+      annotator._viewer.highlightAnnotation(undefined);
 
       // TODO code duplication -> move into a function
       var imgOffset = annotorious.dom.getOffset(image);
@@ -184,44 +188,103 @@ annotorious.okfn.ImagePlugin = function(image, okfnAnnotator) {
 
       // Use editor.show instead of showEditor to prevent a second annotationEditorShown event
       goog.style.setPosition(okfnAnnotator.editor.element[0], 0, window.pageYOffset - baseOffset.top);
-      okfnAnnotator.editor.show();
+      okfnAnnotator.showEditor(annotation, {top: window.pageYOffset - baseOffset.top, left: 0});
       goog.style.setPosition(okfnAnnotator.editor.element[0], x, y);
     }
   });
 
-  okfnAnnotator.subscribe('annotationCreated', function(annotation) {
-    if (annotation.url == image.src) {
-      selector.stopSelection();
-      if(annotation.url == image.src) {
-	viewer.addAnnotation(annotation);
+  okfnAnnotator.subscribe('annotationEditorSubmit', function(editor, annotation) {
+    annotation = formatAnnotation(annotation);
+    annotator.addAnnotation(annotation);
+    // annotator.stopSelection();
+      annotator._currentSelector.stopSelection();
+      if(annotation.id !== undefined) 
+        okfnAnnotator.publish('annotationUpdated',[annotation]);
+      else {
+        okfnAnnotator.publish('annotationCreated',[annotation]);
       }
-    }
+
+      // okfnAnnotator.publish('annotationEditorSubmit',[editor, annotation]);
+      return [];
+  });
+
+
+  okfnAnnotator.subscribe('annotationCreated', function(annotation) {
+    console.log("annotationCreated", annotation)
+    // annotation = formatAnnotation(annotation);
+    // annotator.addAnnotation(annotation);
+    // // annotator.stopSelection();
+
+    //   annotator._currentSelector.stopSelection();
+ //    if (annotation.url == image.src) {
+ //      selector.stopSelection();
+ //      if(annotation.url == image.src) {
+	// viewer.addAnnotation(annotation);
+ //      }
+ //    }
   });
   
+  okfnAnnotator.subscribe('annotationUpdated', function(annotation) {
+    console.log("annotationUpdated", annotation)
+    // annotation = formatAnnotation(annotation);
+    // annotator.addAnnotation(annotation);
+    // // annotator.stopSelection();
+
+    //   annotator._currentSelector.stopSelection();
+ //    if (annotation.url == image.src) {
+ //      selector.stopSelection();
+ //      if(annotation.url == image.src) {
+  // viewer.addAnnotation(annotation);
+ //      }
+ //    }
+  });
+
   okfnAnnotator.subscribe('annotationsLoaded', function(annotations) {
+    var pageAnnotations = annotator.getAnnotations();
+    if(pageAnnotations) {
+      goog.array.forEach(pageAnnotations, function(annotation) {
+        annotator._viewer.removeAnnotation(annotation);
+      });
+    }
+
     goog.array.forEach(annotations, function(annotation) {
-      if(annotation.url == image.src) {
-	viewer.addAnnotation(annotation);
-      }
+      // if(annotation.url == image.src) {
+      // annotator.addAnnotation(annotation);
+	     annotator._viewer.addAnnotation(annotation);
+      // }
     });
   });
   
   okfnAnnotator.subscribe('annotationDeleted', function(annotation) {
-    if(annotation.url == image.src) {
-      viewer.removeAnnotation(annotation);
-    }
+    this._current_annotation = annotation;
+    // if(annotation.url == image.src) {
+      console.log("annotationDeleted", annotation);
+      // debugger;
+      annotator._viewer.removeAnnotation(annotation);
+      annotator._currentSelector.stopSelection();
+      // okfnAnnotator.publish('annotationDeleted',[annotation]);
+    // }
 
     // Annotator silently closes the popup - so we need to fire the event manually afterwards
     eventBroker.fireEvent(annotorious.events.EventType.BEFORE_POPUP_HIDE);
   });
   
   okfnAnnotator.subscribe('annotationEditorHidden', function(editor) {
-    goog.style.showElement(editCanvas, false);
-    selector.stopSelection();
+    goog.style.showElement(annotator._editCanvas, false);
+    annotator._currentSelector.stopSelection();
     
     // TODO workaround before we have decent 'edit' behavior in Annotorious standalone!
     eventBroker.fireEvent(annotorious.events.EventType.BEFORE_POPUP_HIDE);
   });
+
+  var formatAnnotation = function(annotation) {
+    this._current_annotation = annotation;
+    if(!this._current_annotation.id)
+      this._current_annotation.shapes = [annotator.getActiveSelector().getShape()];
+      // new annotorious.annotation.Annotation(annotation.text.url, annotation.text, annotator.getActiveSelector().getShape());  
+    return this._current_annotation;
+}
+
 }
 
 /**
@@ -234,7 +297,7 @@ window['Annotator']['Plugin']['AnnotoriousImagePlugin'] = (function() {
   }
 
   AnnotoriousImagePlugin.prototype['pluginInit'] = function() {
-    var images = this._el.getElementsByTagName('img');
+    var images = [this._el.getElementsByTagName('canvas')[0]];
     var self = this;
     goog.array.forEach(images, function(img, idx, array) {
       new annotorious.okfn.ImagePlugin(img, self['annotator']);

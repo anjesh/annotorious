@@ -12,14 +12,14 @@ goog.require('goog.dom.classes');
  * @param {Object} the base offset of the annotatable DOM element
  * @constructor
  */
-annotorious.okfn.Popup = function(image, okfnAnnotator, baseOffset) {  
+annotorious.okfn.Popup = function(image, okfnAnnotator, baseOffset, eventBroker) {  
   /** @private **/
   this._image = image;
 
   /** @private **/
   // TODO
-  this._eventBroker = undefined;
-  
+  this._eventBroker = eventBroker;
+
   /** @private **/ 
   this._okfnAnnotator = okfnAnnotator;
   
@@ -138,7 +138,6 @@ annotorious.okfn.Popup.prototype.clearHideTimer = function() {
  */
 annotorious.okfn.Popup.prototype.show = function(annotation, xy) {
   goog.dom.classes.remove(this._okfnAnnotator.viewer.element[0], 'annotator-hide');
-
   var imgOffset = annotorious.dom.getOffset(this._image); 
 
   goog.style.setPosition(this._okfnAnnotator.viewer.element[0], 0, window.pageYOffset - this._baseOffset.top);

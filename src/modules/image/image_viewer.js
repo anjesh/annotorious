@@ -108,7 +108,7 @@ annotorious.modules.image.Viewer.prototype.addAnnotation = function(annotation, 
   
   // The viewer always operates in pixel coordinates for efficiency reasons
   var shape = annotation.shapes[0];
-  if (shape.units == annotorious.shape.Units.PIXEL) {
+  if (typeof shape.units !== "undefined" && shape.units == annotorious.shape.Units.PIXEL) {
     this._shapes[annotorious.shape.hashCode(annotation.shapes[0])] = shape;     
   } else {
     var self = this;

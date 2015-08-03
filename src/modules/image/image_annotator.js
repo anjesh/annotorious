@@ -14,7 +14,7 @@ goog.require('goog.style');
  * @param {element} image the image DOM element
  * @constructor
  */
-annotorious.modules.image.ImageAnnotator = function(image, opt_popup) {
+annotorious.modules.image.ImageAnnotator = function(image, opt_popup, eventBroker) {
   var annotationLayer, viewCanvas, hint;
 
   /** The editor for this annotator (public for use by plugins) **/
@@ -27,7 +27,7 @@ annotorious.modules.image.ImageAnnotator = function(image, opt_popup) {
   this._image = image;
   
   /** @private **/
-  this._eventBroker = new annotorious.events.EventBroker();
+  this._eventBroker = eventBroker || new annotorious.events.EventBroker();
 
   /** @private **/
   this._selectors = [];
@@ -39,7 +39,7 @@ annotorious.modules.image.ImageAnnotator = function(image, opt_popup) {
   this._selectionEnabled = true;
 
   var img_bounds = goog.style.getBounds(image);
-  annotationLayer = goog.dom.createDom('div', 'annotorious-annotationlayer');
+  this.annotationLayer = annotationLayer = goog.dom.createDom('div', 'annotorious-annotationlayer');
   goog.style.setStyle(annotationLayer, 'position', 'relative');
   goog.style.setStyle(annotationLayer, 'display', 'inline-block');
 
@@ -105,10 +105,10 @@ annotorious.modules.image.ImageAnnotator = function(image, opt_popup) {
   });
 
   this._eventBroker.addHandler(annotorious.events.EventType.SELECTION_COMPLETED, function(event) {
-    var bounds = event.viewportBounds;
-    self.editor.setPosition({ x: bounds.left + self._image.offsetLeft,
-                              y: bounds.bottom + 4 + self._image.offsetTop });
-    self.editor.open();
+    // var bounds = event.viewportBounds;
+    // self.editor.setPosition({ x: bounds.left + self._image.offsetLeft,
+    //                           y: bounds.bottom + 4 + self._image.offsetTop });
+    // self.editor.open();
   });
   
   this._eventBroker.addHandler(annotorious.events.EventType.SELECTION_CANCELED, function() {
