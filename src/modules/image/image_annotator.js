@@ -234,7 +234,9 @@ annotorious.modules.image.ImageAnnotator.prototype.fireEvent = function(type, ev
  * @returns the corresponding item coordinate
  */
 annotorious.modules.image.ImageAnnotator.prototype.fromItemCoordinates = function(xy) {
-  var imgSize = goog.style.getSize(this._image);
+  // debugger
+  // var imgSize = goog.style.getSize(this._image);
+  var imgSize = {height: this._image.height, width: this._image.width}
   return { x: xy.x * imgSize.width, y: xy.y * imgSize.height };
 }
 

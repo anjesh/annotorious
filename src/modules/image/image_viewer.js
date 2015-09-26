@@ -69,7 +69,7 @@ annotorious.modules.image.Viewer = function(canvas, popup, annotator) {
           
       if (previousAnnotation != self._currentAnnotation) {
         // Annotation under mouse has changed in the mean time - redraw
-        self._redraw();
+        self._redraw(self._cachedMouseEvent);
         self._annotator.fireEvent(annotorious.events.EventType.MOUSE_OUT_OF_ANNOTATION,
           { annotation: previousAnnotation, mouseEvent: self._cachedMouseEvent });
   
@@ -108,6 +108,7 @@ annotorious.modules.image.Viewer.prototype.addAnnotation = function(annotation, 
   
   // The viewer always operates in pixel coordinates for efficiency reasons
   var shape = annotation.shapes[0];
+  // debugger
   if (typeof shape.units !== "undefined" && shape.units == annotorious.shape.Units.PIXEL) {
     this._shapes[annotorious.shape.hashCode(annotation.shapes[0])] = shape;     
   } else {
@@ -210,17 +211,17 @@ annotorious.modules.image.Viewer.prototype.annotationsAt = function(px, py) {
  */
 annotorious.modules.image.Viewer.prototype._onMouseMove = function(event) {
   var topAnnotation = this.topAnnotationAt(event.offsetX, event.offsetY);
-    
   // TODO remove code duplication
 
   var self = this;
   if (topAnnotation) {
+ 
     this._keepHighlighted = false;
 
     if (!this._currentAnnotation) {
       // Mouse moved into annotation from empty space - highlight immediately
       this._currentAnnotation = topAnnotation;
-      this._redraw();
+      this._redraw(event);
       this._annotator.fireEvent(annotorious.events.EventType.MOUSE_OVER_ANNOTATION,
         { annotation: this._currentAnnotation, mouseEvent: event });   
     } else if (this._currentAnnotation != topAnnotation) {
@@ -241,6 +242,7 @@ annotorious.modules.image.Viewer.prototype._onMouseMove = function(event) {
  * @private
  */
 annotorious.modules.image.Viewer.prototype._draw = function(shape, highlight) {
+  if(shape === undefined) return;
   var selector = goog.array.find(this._annotator.getAvailableSelectors(), function(selector) {
     return selector.getSupportedShapeType() == shape.type;
   });  
@@ -254,7 +256,7 @@ annotorious.modules.image.Viewer.prototype._draw = function(shape, highlight) {
 /**
  * @private
  */
-annotorious.modules.image.Viewer.prototype._redraw = function() {
+annotorious.modules.image.Viewer.prototype._redraw = function(mouseevent) {
   this._g2d.clearRect(0, 0, this._canvas.width, this._canvas.height);
 
   var self = this;
@@ -266,7 +268,7 @@ annotorious.modules.image.Viewer.prototype._redraw = function() {
     var shape = this._shapes[annotorious.shape.hashCode(this._currentAnnotation.shapes[0])];
     this._draw(shape, true);
     var bbox = annotorious.shape.getBoundingRect(shape).geometry;
-    this._popup.show(this._currentAnnotation, { x: bbox.x, y: bbox.y + bbox.height + 5 });
+    this._popup.show(this._currentAnnotation, { x: bbox.x, y: bbox.y + bbox.height + 5 }, mouseevent);
 
     // TODO Orientation check - what if the popup would be outside the viewport?
   }

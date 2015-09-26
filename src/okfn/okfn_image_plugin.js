@@ -24,7 +24,11 @@ annotorious.okfn.ImagePlugin = function(image, okfnAnnotator) {
   // BEWARE this may get dirty (at first...)
   var popup = new annotorious.okfn.Popup(image, okfnAnnotator, baseOffset, eventBroker);  
   var annotator = new annotorious.modules.image.ImageAnnotator(image, popup, eventBroker);
+  
   var annotationLayer = annotator.annotationLayer;
+  if(okfnAnnotator.options.readOnly) {
+    annotator.setSelectionEnabled(false);
+  }
   /*
   var annotationLayer = goog.dom.createDom('div', 'yuma-annotationlayer');
   goog.style.setStyle(annotationLayer, 'position', 'relative');
@@ -210,7 +214,6 @@ annotorious.okfn.ImagePlugin = function(image, okfnAnnotator) {
 
 
   okfnAnnotator.subscribe('annotationCreated', function(annotation) {
-    console.log("annotationCreated", annotation)
     // annotation = formatAnnotation(annotation);
     // annotator.addAnnotation(annotation);
     // // annotator.stopSelection();
@@ -225,7 +228,6 @@ annotorious.okfn.ImagePlugin = function(image, okfnAnnotator) {
   });
   
   okfnAnnotator.subscribe('annotationUpdated', function(annotation) {
-    console.log("annotationUpdated", annotation)
     // annotation = formatAnnotation(annotation);
     // annotator.addAnnotation(annotation);
     // // annotator.stopSelection();
@@ -248,9 +250,11 @@ annotorious.okfn.ImagePlugin = function(image, okfnAnnotator) {
     }
 
     goog.array.forEach(annotations, function(annotation) {
+      if(annotation.shapes !== undefined) {
       // if(annotation.url == image.src) {
       // annotator.addAnnotation(annotation);
-	     annotator._viewer.addAnnotation(annotation);
+       annotator._viewer.addAnnotation(annotation);
+      }
       // }
     });
   });
@@ -258,10 +262,9 @@ annotorious.okfn.ImagePlugin = function(image, okfnAnnotator) {
   okfnAnnotator.subscribe('annotationDeleted', function(annotation) {
     this._current_annotation = annotation;
     // if(annotation.url == image.src) {
-      console.log("annotationDeleted", annotation);
       // debugger;
-      annotator._viewer.removeAnnotation(annotation);
       annotator._currentSelector.stopSelection();
+      annotator._viewer.removeAnnotation(annotation);
       // okfnAnnotator.publish('annotationDeleted',[annotation]);
     // }
 
@@ -283,8 +286,7 @@ annotorious.okfn.ImagePlugin = function(image, okfnAnnotator) {
       this._current_annotation.shapes = [annotator.getActiveSelector().getShape()];
       // new annotorious.annotation.Annotation(annotation.text.url, annotation.text, annotator.getActiveSelector().getShape());  
     return this._current_annotation;
-}
-
+  }
 }
 
 /**
