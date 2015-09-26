@@ -202,15 +202,15 @@ annotorious.plugins.selection.RectDragSelector.prototype.drawShape = function(g2
   if (shape.type == annotorious.shape.ShapeType.RECTANGLE) {
     var color, lineWidth;
     if (highlight) {
-      color = '#fff000';
-      lineWidth = 1.2;
+      color = '#ffff00';
+      lineWidth = 2;
     } else {
-      color = '#ffffff';
+      color = '#fff000';
       lineWidth = 1;
     }
 
     var geom = shape.geometry;
-    g2d.strokeStyle = '#000000';
+    g2d.strokeStyle = '#cccccc';
     g2d.lineWidth = lineWidth;
     g2d.strokeRect(geom.x + 0.5, geom.y + 0.5, geom.width + 1, geom.height + 1);
     g2d.strokeStyle = color;
