@@ -14,7 +14,7 @@ goog.require('goog.style');
  * @param {element} image the image DOM element
  * @constructor
  */
-annotorious.modules.image.ImageAnnotator = function(image, opt_popup, eventBroker) {
+annotorious.modules.image.ImageAnnotator = function(image, opt_popup, eventBroker, okfnAnnotator) {
   var annotationLayer, viewCanvas, hint;
 
   /** The editor for this annotator (public for use by plugins) **/
@@ -71,7 +71,7 @@ annotorious.modules.image.ImageAnnotator = function(image, opt_popup, eventBroke
   this._currentSelector = default_selector;
 
   /** @private **/
-  this._viewer = new annotorious.modules.image.Viewer(viewCanvas, this.popup, this); 
+  this._viewer = new annotorious.modules.image.Viewer(viewCanvas, this.popup, this, okfnAnnotator); 
 
   this.editor = new annotorious.editor.Editor(this, annotationLayer);
 

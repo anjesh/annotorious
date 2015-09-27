@@ -13,7 +13,7 @@ goog.require('goog.dom.query');
  * @param {annotorious.modules.image.ImageAnnotator} annotator reference to the annotator
  * @constructor
  */
-annotorious.modules.image.Viewer = function(canvas, popup, annotator) {
+annotorious.modules.image.Viewer = function(canvas, popup, annotator, okfnAnnotator) {
   /** @private **/
   this._canvas = canvas;
 
@@ -44,12 +44,20 @@ annotorious.modules.image.Viewer = function(canvas, popup, annotator) {
   /** @private **/
   this._keepHighlighted = false;
 
+  this._okfnAnnotator = okfnAnnotator;
+
   var self = this; 
   goog.events.listen(this._canvas, goog.events.EventType.MOUSEMOVE, function(event) {
     if (self._eventsEnabled) {
       self._onMouseMove(event);
     } else {
       self._cachedMouseEvent = event;
+    }
+  });
+
+  goog.events.listen(this._canvas, goog.events.EventType.MOUSEDOWN, function(event) {
+    if (self._eventsEnabled) {
+      self._onMouseDown(event);
     }
   });
 
@@ -222,6 +230,7 @@ annotorious.modules.image.Viewer.prototype._onMouseMove = function(event) {
       // Mouse moved into annotation from empty space - highlight immediately
       this._currentAnnotation = topAnnotation;
       this._redraw(event);
+      // this._okfnAnnotator.publish("mouse-over-annotation", { annotation: this._currentAnnotation } );
       this._annotator.fireEvent(annotorious.events.EventType.MOUSE_OVER_ANNOTATION,
         { annotation: this._currentAnnotation, mouseEvent: event });   
     } else if (this._currentAnnotation != topAnnotation) {
@@ -238,6 +247,15 @@ annotorious.modules.image.Viewer.prototype._onMouseMove = function(event) {
   }
 }
 
+annotorious.modules.image.Viewer.prototype._onMouseDown = function(event) {
+  var topAnnotation = this.topAnnotationAt(event.offsetX, event.offsetY);
+  // TODO remove code duplication
+  var self = this;
+  if (topAnnotation) {
+    // this._currentAnnotation = topAnnotation;
+    this._okfnAnnotator.publish("annotorious:annotation-clicked", { annotation: topAnnotation } );
+  }
+}
 /**
  * @private
  */

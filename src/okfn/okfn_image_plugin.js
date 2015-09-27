@@ -23,7 +23,7 @@ annotorious.okfn.ImagePlugin = function(image, okfnAnnotator) {
   // Trying to re-use more from the standalone version
   // BEWARE this may get dirty (at first...)
   var popup = new annotorious.okfn.Popup(image, okfnAnnotator, baseOffset, eventBroker);  
-  var annotator = new annotorious.modules.image.ImageAnnotator(image, popup, eventBroker);
+  var annotator = new annotorious.modules.image.ImageAnnotator(image, popup, eventBroker, okfnAnnotator);
   
   var annotationLayer = annotator.annotationLayer;
   if(okfnAnnotator.options.readOnly) {
