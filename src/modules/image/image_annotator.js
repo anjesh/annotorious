@@ -346,6 +346,8 @@ annotorious.modules.image.ImageAnnotator.prototype.stopSelection = function(orig
  */
 annotorious.modules.image.ImageAnnotator.prototype.toItemCoordinates = function(xy) {
   var imgSize = goog.style.getSize(this._image);
+  imgSize.width = imgSize.width || this._image.getAttribute("width");
+  imgSize.height = imgSize.height || this._image.getAttribute("height");
   return { x: xy.x / imgSize.width, y: xy.y / imgSize.height };
 }
 
